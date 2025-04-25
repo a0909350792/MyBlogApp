@@ -1,0 +1,36 @@
+﻿@model MyBlogApp.Models.Post
+
+@{
+    ViewData["Title"] = "編輯文章";
+    var categories = ViewData["Categories"] as List<MyBlogApp.Models.Category>;
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Edit">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Content"></label>
+        <textarea asp-for="Content" class="form-control" rows="10"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CategoryId">分類</label>
+        <select asp-for="CategoryId" class="form-control"
+                asp-items="@(new SelectList(categories, "Id", "Name"))">
+            <option value="">-- 請選擇分類 --</option>
+        </select>
+        <span asp-validation-for="CategoryId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">儲存變更</button>
+    <a asp-action="Index" class="btn btn-secondary">取消</a>
+</form>

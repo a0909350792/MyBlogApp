@@ -1,0 +1,38 @@
+﻿@model IEnumerable<MyBlogApp.Models.Category>
+
+@{
+    ViewData["Title"] = "分類管理";
+}
+
+<h2 class="mb-4">分類管理</h2>
+
+<a asp-action="Create" class="btn btn-success mb-3">➕ 新增分類</a>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>分類名稱</th>
+            <th style="width: 200px">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">✏️ 編輯</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger ms-2">🗑️ 刪除</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info mt-3">
+        尚未新增任何分類，請點擊「新增分類」開始建立吧！
+    </div>
+
+}
