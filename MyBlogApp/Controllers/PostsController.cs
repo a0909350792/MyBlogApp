@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using MyBlogApp.Models;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -18,29 +19,34 @@ namespace MyBlogApp.Controllers
 
         public async Task<IActionResult> Index(string? search, int? categoryId)
         {
-            var posts = _context.Posts.Include(p => p.Category)
-                                      .AsQueryable();
+            var postsQuery = _context.Posts.Include(p => p.Category).AsQueryable();
 
-            // 搜尋功能
             if (!string.IsNullOrEmpty(search))
             {
-                posts = posts.Where(p => p.Title.Contains(search) || p.Content.Contains(search));
+                postsQuery = postsQuery.Where(p => p.Title.Contains(search) || p.Content.Contains(search));
             }
 
-            // 分類過濾功能
             if (categoryId.HasValue)
             {
-                posts = posts.Where(p => p.CategoryId == categoryId);
+                postsQuery = postsQuery.Where(p => p.CategoryId == categoryId);
             }
 
-            // 傳遞到視圖的資料
-            ViewData["Categories"] = new SelectList(_context.Categories, "Id", "Name");
-            ViewData["Search"] = search;
-            ViewData["CategoryId"] = categoryId;
+            var posts = await postsQuery
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new Post
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Content = p.Content,
+                    Category = p.Category,
+                    CreatedAt = p.CreatedAt,
+                    Comments = p.Comments
+                })
+                .ToListAsync();
 
-            // 返回排序過的文章列表
-            return View(await posts.OrderByDescending(p => p.CreatedAt).ToListAsync());
+            return View(posts);  // 傳遞資料給視圖
         }
+
 
 
         // 顯示單一文章

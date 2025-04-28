@@ -36,6 +36,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="/Account/Logout">登出</a>
                             </li>
+                            @* 只有 Role = "1" 才顯示會員管理 *@
+                            @if (Context.Session.GetString("Role") == "1")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/Account/Index">會員管理</a>
+                                </li>
+                            }
                         }
                         else
                         {

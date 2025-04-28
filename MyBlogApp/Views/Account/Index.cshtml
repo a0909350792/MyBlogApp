@@ -1,0 +1,39 @@
+﻿@model IEnumerable<MyBlogApp.Models.User>
+
+@{
+    ViewData["Title"] = "所有會員";
+}
+
+<h2>所有會員</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>用戶名</th>
+            <th>全名</th>
+            <th>註冊日期</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@user.FullName</td>
+                <td>@user.JoinedDate</td>
+                <td>
+                    <a href="@Url.Action("Details", "Account", new { id = user.Id })" class="btn btn-info">詳細</a>
+                    <a class="btn btn-danger btn-sm" href="@Url.Action("Delete", "Account", new { id = user.Id })" onclick="return confirm('確定要刪除此會員嗎？');">刪除</a>
+                </td>
+               
+
+               
+            </tr>
+        }
+    </tbody>
+</table>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}

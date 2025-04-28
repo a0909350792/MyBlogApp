@@ -1,0 +1,22 @@
+﻿@model MyBlogApp.Models.User
+
+@{
+    ViewData["Title"] = "會員詳細信息";
+}
+
+<h2>@Model.UserName 的詳細信息</h2>
+
+<div>
+    <strong>用戶名:</strong> @Model.UserName
+</div>
+<div>
+    <strong>全名:</strong> @Model.FullName
+</div>
+<div>
+    <strong>註冊日期:</strong> @Model.JoinedDate
+</div>
+
+<a class="btn btn-warning" href="/Account/Edit/@Context.Session.GetString("UserId")">編輯個人資料</a>
+
+<a href="@Url.Action("Index", "Account")" class="btn btn-primary">返回</a>
+

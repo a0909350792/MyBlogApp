@@ -1,52 +1,146 @@
-﻿@model IEnumerable<MyBlogApp.Models.Post>
+﻿
+@model List<MyBlogApp.Models.Post> 
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MyBlogApp</title>
 
-@{
-    ViewData["Title"] = "我的部落格";
-}
+    <!-- 引用 site.css -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
 
-<div class="container mt-4">
+<h2>最新文章</h2>
+<form method="get" action="@Url.Action("Index", "Home")">
+    <!-- 搜索框 -->
+    <input type="text" name="search" class="form-control" placeholder="搜尋文章..." value="@ViewBag.Search">
 
-    <h1 class="mb-4 text-center">我的部落格</h1>
+    <!-- 顯示分類 -->
+    <select name="categoryId" class="form-control">
+        <option value="">選擇分類</option>
+        @foreach (var category in ViewBag.Categories as List<MyBlogApp.Models.Category>)
+        {
+            <option value="@category.Id" @@(category.Id == ViewBag.CategoryId ? "selected" : "")>@category.Name</option>
+        }
+    </select>
 
-    <!-- 搜尋與分類篩選 -->
-    <form asp-action="Index" method="get" class="row mb-4">
-        <div class="col-md-8 mb-2">
-            <input type="text" name="search" class="form-control" placeholder="搜尋文章..." value="@ViewBag.Search" />
-        </div>
-        <div class="col-md-3 mb-2">
-            <select name="categoryId" class="form-select">
-                <option value="">所有分類</option>
-                @foreach (var category in ViewBag.Categories as List<MyBlogApp.Models.Category>)
-                {
-                    <option value="@category.Id" @@(ViewBag.CategoryId == category.Id ? "selected" : "")>@category.Name</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100">搜尋</button>
-        </div>
-    </form>
+    <button type="submit" class="btn btn-primary mt-2">篩選</button>
+</form>
 
-    <!-- 文章列表 -->
-    @if (Model.Any())
+
+<!-- 文章列表 -->
+<div class="list-group mt-4" id="postsList">
+    @foreach (var post in Model)
     {
-        <div class="list-group">
-            @foreach (var post in Model)
-            {
-                <a asp-controller="Posts" asp-action="Details" asp-route-id="@post.Id" class="list-group-item list-group-item-action mb-3">
-                    <h4>@post.Title</h4>
-                    <p class="text-muted">
-                        分類：@post.Category.Name ｜ 發佈時間：@post.CreatedAt.ToString("yyyy-MM-dd")
-                    </p>
-                    <p>@(post.Content.Length > 100 ? post.Content.Substring(0, 100) + "..." : post.Content)</p>
-                </a>
+        <a asp-controller="Posts" asp-action="Details" asp-route-id="@post.Id" class="list-group-item list-group-item-action mb-3">
+            <h5>@post.Title</h5>
+            <p>@post.Content.Substring(0, Math.Min(post.Content.Length, 150))...</p>
+            <small class="text-muted">分類：@post.Category.Name</small>
+        </a>
+    }
+</div>
+
+<!-- 分頁 -->
+<div class="d-flex justify-content-center mt-4">
+    <ul class="pagination" id="pagination">
+        <!-- 分頁按鈕會在這裡動態生成 -->
+    </ul>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+
+        // 搜索文章
+        document.getElementById('searchBox').addEventListener('input', function() {
+            filterPosts();
+        });
+
+        // 根據分類篩選文章
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            filterPosts();
+        });
+
+        // 篩選文章的函式
+        function filterPosts() {
+            let searchQuery = document.getElementById('searchBox').value.toLowerCase();
+            let categoryId = document.getElementById('categoryFilter').value;
+
+            // 使用 AJAX 發送篩選請求
+            fetch(`/Posts/Index?search=${searchQuery}&categoryId=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 更新文章列表
+                    updatePosts(data.posts);
+                    // 更新分頁
+                    paginatePosts();
+                });
+        }
+
+        function updatePosts(posts) {
+            let postsList = document.getElementById('postsList');
+            postsList.innerHTML = '';
+
+            posts.forEach(post => {
+                let postElement = document.createElement('a');
+                postElement.classList.add('list-group-item', 'list-group-item-action', 'mb-3');
+                postElement.href = `/Posts/Details/${post.id}`;
+
+                postElement.innerHTML = `
+                    <h5>${post.title}</h5>
+                    <p>${post.content.substring(0, 150)}...</p>
+                    <small class="text-muted">分類：${post.categoryName}</small>
+                `;
+                postsList.appendChild(postElement);
+            });
+        }
+
+        // 分頁功能
+        function paginatePosts() {
+            let posts = document.querySelectorAll('.list-group-item');
+            let postsPerPage = 5;
+            let pageCount = Math.ceil(posts.length / postsPerPage);
+
+            function showPage(pageNumber) {
+                currentPage = pageNumber;
+                let start = (pageNumber - 1) * postsPerPage;
+                let end = start + postsPerPage;
+
+                posts.forEach((post, index) => {
+                    if (index >= start && index < end) {
+                        post.style.display = '';
+                    } else {
+                        post.style.display = 'none';
+                    }
+                });
             }
-        </div>
-    }
-    else
+
+            // 動態生成分頁按鈕
+            let pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            for (let i = 1; i <= pageCount; i++) {
+                let li = document.createElement('li');
+                li.classList.add('page-item');
+                li.classList.toggle('active', i === currentPage);
+                li.innerHTML = `<a class="page-link" href="javascript:void(0)" onclick="showPage(${i})">${i}</a>`;
+                pagination.appendChild(li);
+            }
+
+            // 顯示當前頁面
+            showPage(currentPage);
+        }
+
+        window.onload = function() {
+            filterPosts();
+        };
+    </script>
+}
+<!-- 顯示搜尋結果 -->
+<div>
+    @if (ViewBag.NoResults != null)
     {
-        <div class="alert alert-info text-center">
-            找不到任何文章。
+        <div class="alert alert-warning">
+            @ViewBag.NoResults
         </div>
     }
+   
 </div>

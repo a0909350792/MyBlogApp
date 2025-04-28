@@ -20,3 +20,51 @@ html {
 body {
   margin-bottom: 60px;
 }
+/* 標題區域 */
+h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* 搜索框和分類篩選的樣式 */
+#searchBox, #categoryFilter {
+    margin-bottom: 20px;
+}
+
+/* 文章項目 */
+.list-group-item {
+    transition: background-color 0.3s ease;
+}
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .list-group-item h5 {
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .list-group-item p {
+        font-size: 1rem;
+        color: #555;
+    }
+
+/* 分頁樣式 */
+.pagination {
+    justify-content: center;
+    display: flex;
+}
+
+    .pagination .page-item {
+        margin: 0 5px;
+    }
+
+    .pagination .page-link {
+        border: 1px solid #ddd;
+        color: #007bff;
+        padding: 5px 10px;
+    }
