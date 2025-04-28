@@ -16,27 +16,32 @@ namespace MyBlogApp.Controllers
             _context = context;
         }
 
-        // 顯示所有文章
         public async Task<IActionResult> Index(string? search, int? categoryId)
         {
-            var posts = _context.Posts.Include(p => p.Category).AsQueryable();
+            var posts = _context.Posts.Include(p => p.Category)
+                                      .AsQueryable();
 
+            // 搜尋功能
             if (!string.IsNullOrEmpty(search))
             {
                 posts = posts.Where(p => p.Title.Contains(search) || p.Content.Contains(search));
             }
 
+            // 分類過濾功能
             if (categoryId.HasValue)
             {
                 posts = posts.Where(p => p.CategoryId == categoryId);
             }
 
+            // 傳遞到視圖的資料
             ViewData["Categories"] = new SelectList(_context.Categories, "Id", "Name");
             ViewData["Search"] = search;
             ViewData["CategoryId"] = categoryId;
 
+            // 返回排序過的文章列表
             return View(await posts.OrderByDescending(p => p.CreatedAt).ToListAsync());
         }
+
 
         // 顯示單一文章
         public async Task<IActionResult> Details(int id)
@@ -50,27 +55,52 @@ namespace MyBlogApp.Controllers
         }
 
         // 顯示創建文章的表單
+        [HttpGet]
+
         public IActionResult Create()
         {
-            ViewData["Categories"] = _context.Categories.ToList();
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.Categories = new SelectList(_context.Categories, "Id", "Name");
             return View();
         }
-        // POST: Posts/Create
+        // 處理新增文章
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Title,Content,CategoryId")] Post post)
         {
             if (ModelState.IsValid)
             {
-                post.CreatedAt = DateTime.Now;  // 設置創建時間
+                // 設置創建時間
+                post.CreatedAt = DateTime.Now;
+
+                // 把登入者名字存到 User 欄位
+                post.User = HttpContext.Session.GetString("UserName");
 
                 _context.Add(post);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));  // 重定向到文章列表頁
+                return RedirectToAction(nameof(Index));
             }
-            ViewData["Categories"] = _context.Categories.ToList();  // 保留分類資料供顯示
+
+            // 如果驗證失敗，列出所有錯誤
+            foreach (var key in ModelState.Keys)
+            {
+                var errors = ModelState[key].Errors;
+                foreach (var error in errors)
+                {
+                    Console.WriteLine($"欄位: {key}, 錯誤: {error.ErrorMessage}");
+                }
+            }
+
+            ViewBag.Categories = new SelectList(_context.Categories, "Id", "Name", post.CategoryId);
             return View(post);
         }
+
+
+
 
 
 
@@ -130,6 +160,7 @@ namespace MyBlogApp.Controllers
             return View(post);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddComment(int postId, string content) 
         {
             if (string.IsNullOrWhiteSpace(content))
@@ -146,8 +177,77 @@ namespace MyBlogApp.Controllers
             };
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
+            TempData["CommentSuccess"] = "留言成功！";  // 新增成功訊息
 
             return RedirectToAction("Details", new { id = postId });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(int id)
+        {
+            var comment = await _context.Comments.FindAsync(id);
+            if (comment == null)
+            {
+                return NotFound();
+            }
+
+            int postId = comment.PostId; // 留言刪除後要回到原本的文章
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+
+            TempData["CommentSuccess"] = "留言已刪除！";
+            return RedirectToAction("Details", new { id = postId });
+        }
+
+        // 顯示刪除文章的確認頁面
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var post = await _context.Posts
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            if (post == null)
+            {
+                return NotFound();
+            }
+
+            return View(post);
+        }
+
+        // 處理刪除文章的請求
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null)
+            {
+                Console.WriteLine($"Post with ID {id} not found.");
+                return NotFound();
+            }
+
+            // 顯示將要刪除的文章
+            Console.WriteLine($"Deleting Post: {post.Title}");
+
+            var comments = _context.Comments.Where(c => c.PostId == id);
+            _context.Comments.RemoveRange(comments);
+
+            _context.Posts.Remove(post);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        private bool PostExists(int id)
+        {
+            return _context.Posts.Any(e => e.Id == id);
+        }
     }
 }
+

@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "註冊";
+}
+
+<h2 class="text-center">註冊</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" role="alert">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+<form method="post" class="mt-4">
+    <div class="mb-3">
+        <label for="userName" class="form-label">用戶名</label>
+        <input type="text" name="userName" id="userName" class="form-control" placeholder="請輸入用戶名" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="fullName" class="form-label">全名</label>
+        <input type="text" name="fullName" id="fullName" class="form-control" placeholder="請輸入全名" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">密碼</label>
+        <input type="password" name="password" id="password" class="form-control" placeholder="請輸入密碼" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">註冊</button>
+</form>
+
+<p class="mt-3 text-center">已經有帳號？<a href="/Account/Login">登入</a></p>
